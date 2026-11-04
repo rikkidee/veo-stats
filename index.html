@@ -33,6 +33,9 @@ tr:hover td{background:#1c2333}
 .sub-title{font-size:15px;color:#8b949e;margin:16px 0 8px}
 canvas{max-height:350px}
 .hidden{display:none}
+[data-tip]{position:relative;cursor:help;border-bottom:1px dotted #58a6ff}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:#1f2937;color:#e0e6ed;padding:8px 12px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:100;border:1px solid #30363d;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+[data-tip]:hover::before{content:'';position:absolute;bottom:110%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#1f2937;z-index:100}
 .toggle-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
 .toggle-btn{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px}
 .toggle-btn.active{background:#238636;color:#fff;border-color:#238636}
@@ -409,6 +412,7 @@ function renderPlayerSummary(name){
   const src=playerMode==='per60'?p.per60:p.totals;
   const modeLabel=playerMode==='per60'?'/60min':'total';
   const stats=['Goals','Shots','Passes successful','Tackles','Duels','Interceptions','Dribbles','Loose ball recoveries','High-intensity runs'];
+  const tips={'Goals':'Attempts on goal that resulted in a score','Shots':'Attempts on goal that did not result in a goal','Tackles':'Dispossessing an opponent by making physical contact to win the ball','Duels':'Any 1v1 contest between two opposing players for the ball','Interceptions':'Cutting out or intercepting a pass intended for an opponent','Dribbles':'Carrying the ball past an opposing player while maintaining possession','Loose ball recoveries':'Gaining possession of a ball not controlled by either team','High-intensity runs':'Sustained running above the high-speed threshold but below sprint speed','Passes successful':'Passes that successfully reach a teammate','Sprints':'Running at or above the sprint speed threshold','Pass %':'Percentage of total passes that were successful','Top speed':'Highest recorded speed during the match'};
 
   const totalP=p.totals.Passes||0,succP=p.totals['Passes successful']||0;
   const passRate=totalP>0?Math.round(succP/totalP*100):0;
@@ -418,8 +422,9 @@ function renderPlayerSummary(name){
   document.getElementById('player-summary').innerHTML=
     `<div class="stat-card"><div class="value">${p.games_played}</div><div class="label">Games</div></div>`+
     stats.map(s=>{
-      if(s==='Passes successful')return`<div class="stat-card"><div class="value">${passRate}%</div><div class="label">Pass %</div></div><div class="stat-card"><div class="value">${src[s]||0}</div><div class="label">Successful Passes ${modeLabel}</div></div>`;
-      return`<div class="stat-card"><div class="value">${src[s]||0}</div><div class="label">${s} ${modeLabel}</div></div>`;
+      const tip=tips[s]?` data-tip="${tips[s]}"`:'';
+      if(s==='Passes successful')return`<div class="stat-card"><div class="value">${passRate}%</div><div class="label"${tips['Pass %']?' data-tip="'+tips['Pass %']+'"':''}>Pass %</div></div><div class="stat-card"><div class="value">${src[s]||0}</div><div class="label"${tip}>Successful Passes ${modeLabel}</div></div>`;
+      return`<div class="stat-card"><div class="value">${src[s]||0}</div><div class="label"${tip}>${s} ${modeLabel}</div></div>`;
     }).join('')+
     `<div class="stat-card"><div class="value">${Math.round(p.totals['Minutes tracked']||0)}</div><div class="label">Total Minutes</div></div>`+
     `<div class="stat-card"><div class="value">${totalKm}</div><div class="label">Total KM Run</div></div>`+
@@ -443,7 +448,8 @@ function renderPlayerTable(name){
   const p=DATA.players[name];if(!p)return;
   const gameDates={};DATA.games.forEach(g=>{gameDates[g.label]=g.date.replace(', 2026','')});
   const cols=['Game','Date','Min','Goals','Shots','Pass Succ','Pass %','Tackles','Duels','Int','Dribbles','Recoveries','HI Runs','Sprints','Top Spd (kph)','KM'];
-  let thtml='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+  const colTips={'Goals':'Attempts resulting in a score','Shots':'Attempts that did not result in a goal','Pass Succ':'Passes that reach a teammate','Pass %':'Percentage of passes that were successful','Tackles':'Dispossessing an opponent with physical contact','Duels':'1v1 contests for the ball','Int':'Cutting out a pass intended for an opponent','Dribbles':'Carrying past an opponent while keeping possession','Recoveries':'Gaining possession of an uncontrolled ball','HI Runs':'Sustained running above high-speed threshold','Sprints':'Running at or above sprint speed threshold'};
+  let thtml='<tr>'+cols.map(c=>{const tip=colTips[c]?` data-tip="${colTips[c]}"`:'';return`<th${tip}>${c}</th>`}).join('')+'</tr>';
   for(let i=1;i<=8;i++){
     const gLabel='G'+i;
     const gd=p.per_game.find(g=>g.game===gLabel);
